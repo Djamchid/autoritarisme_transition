@@ -26,7 +26,23 @@ function init() {
     const numAgents = parseInt(document.getElementById('numAgents').value);
     simulator = new Simulator(numAgents);
     visualizer = new Visualizer(agentCanvas, timeSeriesCanvas);
-    radarChart = new RadarChart(radarCanvas);
+
+    // Créer le radar chart avec callback pour les changements de paramètres
+    radarChart = new RadarChart(radarCanvas, (paramKey, newValue) => {
+        // Mettre à jour le simulateur
+        simulator.setParameter(paramKey, newValue);
+
+        // Mettre à jour l'affichage du slider correspondant
+        const slider = document.getElementById(paramKey);
+        const valueDisplay = document.getElementById(`${paramKey}Value`);
+        if (slider) {
+            slider.value = newValue;
+            valueDisplay.textContent = newValue.toFixed(2);
+        }
+
+        // Redessiner le radar
+        radarChart.draw(simulator.parameters);
+    });
 
     // Configurer les contrôles
     setupControls();
