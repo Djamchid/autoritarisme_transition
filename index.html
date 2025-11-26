@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation: Transition Démocratique vers l'Autoritarisme</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Simulation: Transition Démocratique vers l'Autoritarisme</h1>
+            <p>Modélisation par équations différentielles d'un système multi-agents</p>
+        </header>
+
+        <main>
+            <div class="simulation-area">
+                <div class="canvas-container">
+                    <canvas id="agentCanvas" width="600" height="400"></canvas>
+                    <div class="canvas-label">Distribution des agents (couleur = adhésion démocratique)</div>
+                </div>
+
+                <div class="charts-container">
+                    <canvas id="timeSeriesCanvas" width="600" height="300"></canvas>
+                    <div class="canvas-label">Évolution temporelle des variables macroscopiques</div>
+                </div>
+
+                <div class="metrics-display">
+                    <div class="metric-box">
+                        <div class="metric-label">Paramètre d'ordre (Ψ)</div>
+                        <div class="metric-value" id="orderParameter">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Adhésion démocratique moyenne (⟨α⟩)</div>
+                        <div class="metric-value" id="avgAlpha">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Qualité institutionnelle (Q)</div>
+                        <div class="metric-value" id="instQuality">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Polarisation (Φ)</div>
+                        <div class="metric-value" id="polarization">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Menace perçue (M)</div>
+                        <div class="metric-value" id="threat">-</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Temps (t)</div>
+                        <div class="metric-value" id="time">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-area">
+                <div class="control-section">
+                    <h3>Contrôles de simulation</h3>
+                    <div class="button-group">
+                        <button id="startBtn" class="btn btn-primary">Démarrer</button>
+                        <button id="pauseBtn" class="btn btn-secondary" disabled>Pause</button>
+                        <button id="resetBtn" class="btn btn-warning">Réinitialiser</button>
+                    </div>
+                    <div class="control-item">
+                        <label for="numAgents">Nombre d'agents: <span id="numAgentsValue">100</span></label>
+                        <input type="range" id="numAgents" min="50" max="500" value="100" step="10">
+                    </div>
+                    <div class="control-item">
+                        <label for="timeStep">Pas de temps (dt): <span id="timeStepValue">0.01</span></label>
+                        <input type="range" id="timeStep" min="0.001" max="0.1" value="0.01" step="0.001">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Paramètres individuels</h3>
+                    <div class="control-item">
+                        <label for="beta1">β₁ (éducation): <span id="beta1Value">0.5</span></label>
+                        <input type="range" id="beta1" min="0" max="2" value="0.5" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label for="beta2">β₂ (insécurité): <span id="beta2Value">0.3</span></label>
+                        <input type="range" id="beta2" min="0" max="2" value="0.3" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label for="beta3">β₃ (institutions): <span id="beta3Value">0.4</span></label>
+                        <input type="range" id="beta3" min="0" max="2" value="0.4" step="0.1">
+                    </div>
+                    <div class="control-item">
+                        <label for="beta4">β₄ (peur): <span id="beta4Value">0.6</span></label>
+                        <input type="range" id="beta4" min="0" max="2" value="0.6" step="0.1">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Paramètres macroscopiques</h3>
+                    <div class="control-item">
+                        <label for="mu1">μ₁ (engagement): <span id="mu1Value">0.3</span></label>
+                        <input type="range" id="mu1" min="0" max="1" value="0.3" step="0.05">
+                    </div>
+                    <div class="control-item">
+                        <label for="mu2">μ₂ (capture): <span id="mu2Value">0.4</span></label>
+                        <input type="range" id="mu2" min="0" max="1" value="0.4" step="0.05">
+                    </div>
+                    <div class="control-item">
+                        <label for="mu3">μ₃ (corruption): <span id="mu3Value">0.2</span></label>
+                        <input type="range" id="mu3" min="0" max="1" value="0.2" step="0.05">
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>Conditions initiales</h3>
+                    <div class="control-item">
+                        <label for="initQ">Qualité institutionnelle (Q₀): <span id="initQValue">0.7</span></label>
+                        <input type="range" id="initQ" min="0" max="1" value="0.7" step="0.05">
+                    </div>
+                    <div class="control-item">
+                        <label for="initGini">Inégalités (G₀): <span id="initGiniValue">0.3</span></label>
+                        <input type="range" id="initGini" min="0" max="1" value="0.3" step="0.05">
+                    </div>
+                    <div class="control-item">
+                        <label for="externalThreat">Menace externe (M_ext): <span id="externalThreatValue">0.2</span></label>
+                        <input type="range" id="externalThreat" min="0" max="1" value="0.2" step="0.05">
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Module JavaScript imports -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
