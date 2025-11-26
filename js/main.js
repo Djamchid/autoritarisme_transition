@@ -6,12 +6,14 @@
 import { Simulator } from './simulator.js';
 import { Visualizer } from './visualization.js';
 import { RadarChart } from './radarchart.js';
+import { analyzeSensitivity } from './sensitivity.js';
 
 // État global de l'application
 let simulator;
 let visualizer;
 let radarChart;
 let animationFrameId = null;
+let sensitivityZones = null;
 
 /**
  * Initialisation de l'application
@@ -44,6 +46,9 @@ function init() {
         radarChart.draw(simulator.parameters);
     });
 
+    // Doubler la taille du radar
+    radarChart.doubleSize();
+
     // Configurer les contrôles
     setupControls();
 
@@ -59,6 +64,7 @@ function setupControls() {
     document.getElementById('startBtn').addEventListener('click', startSimulation);
     document.getElementById('pauseBtn').addEventListener('click', pauseSimulation);
     document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+    document.getElementById('sensitivityBtn').addEventListener('click', runSensitivityAnalysis);
 
     // Contrôles de simulation
     setupSlider('numAgents', (value) => {
@@ -216,6 +222,68 @@ function render() {
     // Mettre à jour les métriques
     const state = simulator.getState();
     visualizer.updateMetrics(state);
+}
+
+/**
+ * Lance l'analyse de sensibilité paramétrique
+ */
+async function runSensitivityAnalysis() {
+    const btn = document.getElementById('sensitivityBtn');
+    const statusDiv = document.getElementById('sensitivityStatus');
+
+    // Désactiver le bouton pendant l'analyse
+    btn.disabled = true;
+    btn.textContent = 'Analyse en cours...';
+    statusDiv.textContent = 'Démarrage de l\'analyse...';
+    statusDiv.style.display = 'block';
+
+    // Mettre en pause la simulation si elle tourne
+    const wasRunning = simulator.running;
+    if (wasRunning) {
+        pauseSimulation();
+    }
+
+    // Lancer l'analyse dans un setTimeout pour permettre la mise à jour de l'UI
+    setTimeout(() => {
+        try {
+            sensitivityZones = analyzeSensitivity(
+                simulator.parameters,
+                (paramName, current, total) => {
+                    statusDiv.textContent = `Analyse du paramètre ${paramName} (${current}/${total})...`;
+                }
+            );
+
+            // Mettre à jour le radar avec les zones de sensibilité
+            radarChart.setSensitivityZones(sensitivityZones);
+            radarChart.draw(simulator.parameters);
+
+            // Afficher les résultats dans la console
+            console.log('Résultats de l\'analyse de sensibilité:', sensitivityZones);
+
+            statusDiv.textContent = 'Analyse terminée ! Les zones de transition sont affichées sur le radar.';
+            statusDiv.style.color = '#4CAF50';
+
+        } catch (error) {
+            console.error('Erreur lors de l\'analyse de sensibilité:', error);
+            statusDiv.textContent = 'Erreur lors de l\'analyse : ' + error.message;
+            statusDiv.style.color = '#F44336';
+        } finally {
+            // Réactiver le bouton
+            btn.disabled = false;
+            btn.textContent = 'Analyser la sensibilité';
+
+            // Cacher le message après 5 secondes
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+                statusDiv.style.color = '#333';
+            }, 5000);
+
+            // Reprendre la simulation si elle tournait
+            if (wasRunning) {
+                startSimulation();
+            }
+        }
+    }, 100);
 }
 
 // Initialiser l'application au chargement de la page

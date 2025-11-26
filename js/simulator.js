@@ -28,12 +28,13 @@ export class Simulator {
 
     /**
      * Initialise les agents avec des positions aléatoires
+     * Les positions sont dans [0, 0.5] x [0, 0.5] (zone divisée par 2)
      */
     initializeAgents() {
         this.agents = [];
         for (let i = 0; i < this.numAgents; i++) {
-            const x = Math.random();
-            const y = Math.random();
+            const x = Math.random() * 0.5;  // Zone réduite de moitié
+            const y = Math.random() * 0.5;
             this.agents.push(new Agent(i, x, y));
         }
     }
@@ -41,9 +42,10 @@ export class Simulator {
     /**
      * Configure le voisinage social de chaque agent
      * Utilise une approche basée sur la distance spatiale
+     * Le rayon est adapté à la zone réduite (0.1 au lieu de 0.2)
      */
     setupNeighborhoods() {
-        const neighborhoodRadius = 0.2;  // Rayon de voisinage
+        const neighborhoodRadius = 0.1;  // Rayon de voisinage réduit de moitié
 
         for (let agent of this.agents) {
             agent.neighbors = [];

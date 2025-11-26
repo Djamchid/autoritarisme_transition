@@ -19,6 +19,7 @@
                 <button id="startBtn" class="btn btn-primary">Démarrer</button>
                 <button id="pauseBtn" class="btn btn-secondary" disabled>Pause</button>
                 <button id="resetBtn" class="btn btn-warning">Réinitialiser</button>
+                <button id="sensitivityBtn" class="btn btn-info">Analyser la sensibilité</button>
             </div>
             <div class="fixed-controls-params">
                 <div class="control-item-inline">
@@ -30,6 +31,7 @@
                     <input type="range" id="timeStep" min="0.001" max="0.1" value="0.01" step="0.001">
                 </div>
             </div>
+            <div id="sensitivityStatus" style="display: none; margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 4px; font-size: 14px;"></div>
         </div>
 
         <main>
@@ -75,8 +77,11 @@
             <div class="controls-area">
                 <div class="control-section radar-section">
                     <h3>Vue d'ensemble des paramètres</h3>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                        Cliquez sur "Analyser la sensibilité" pour afficher les zones [p_autocratique, p_démocratique]
+                    </p>
                     <div class="radar-container">
-                        <canvas id="radarCanvas" width="350" height="350"></canvas>
+                        <canvas id="radarCanvas" width="700" height="700"></canvas>
                     </div>
                 </div>
 
