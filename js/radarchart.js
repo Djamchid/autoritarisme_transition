@@ -15,6 +15,9 @@ export class RadarChart {
         this.centerY = canvas.height / 2;
         this.radius = Math.min(canvas.width, canvas.height) / 2 - 60;
 
+        // Zones de sensibilité {paramKey: {autocratic, democratic}}
+        this.sensitivityZones = null;
+
         // Paramètres à visualiser
         this.parameters = [
             { key: 'beta1', label: 'β₁ éducation', max: 2, color: '#4CAF50' },
@@ -131,6 +134,14 @@ export class RadarChart {
     }
 
     /**
+     * Définit les zones de sensibilité à afficher
+     * @param {Object} zones - Zones de sensibilité {paramKey: {autocratic, democratic}}
+     */
+    setSensitivityZones(zones) {
+        this.sensitivityZones = zones;
+    }
+
+    /**
      * Dessine le radar chart avec les valeurs des paramètres
      * @param {Object} params - Objet contenant les valeurs des paramètres
      */
@@ -150,6 +161,11 @@ export class RadarChart {
 
         // Dessiner les axes
         this.drawAxes();
+
+        // Dessiner les zones de sensibilité si disponibles
+        if (this.sensitivityZones) {
+            this.drawSensitivityZones();
+        }
 
         // Dessiner les données
         this.drawData(params);
@@ -279,6 +295,75 @@ export class RadarChart {
     }
 
     /**
+     * Dessine les zones de sensibilité [p_autocratique, p_démocratique]
+     */
+    drawSensitivityZones() {
+        const ctx = this.ctx;
+
+        for (let i = 0; i < this.numAxes; i++) {
+            const param = this.parameters[i];
+            const zone = this.sensitivityZones[param.key];
+
+            if (!zone) continue;
+
+            // Calculer les positions radiales
+            const rMin = this.radius * (zone.min / param.max);
+            const rMax = this.radius * (zone.max / param.max);
+
+            const angle = i * this.angleStep - Math.PI / 2;
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+
+            // Dessiner une barre colorée sur l'axe
+            const x1 = this.centerX + rMin * cos;
+            const y1 = this.centerY + rMin * sin;
+            const x2 = this.centerX + rMax * cos;
+            const y2 = this.centerY + rMax * sin;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = 'rgba(76, 175, 80, 0.5)';  // Vert semi-transparent
+            ctx.lineWidth = 8;
+            ctx.stroke();
+
+            // Marquer les seuils
+            const xAuto = this.centerX + (this.radius * zone.autocratic / param.max) * cos;
+            const yAuto = this.centerY + (this.radius * zone.autocratic / param.max) * sin;
+            const xDemo = this.centerX + (this.radius * zone.democratic / param.max) * cos;
+            const yDemo = this.centerY + (this.radius * zone.democratic / param.max) * sin;
+
+            // Point autocratique (rouge)
+            ctx.beginPath();
+            ctx.arc(xAuto, yAuto, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#F44336';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Point démocratique (bleu)
+            ctx.beginPath();
+            ctx.arc(xDemo, yDemo, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#2196F3';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Légende
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#F44336';
+        ctx.fillText('● ψ=0 (autocratique)', 10, this.canvas.height - 30);
+        ctx.fillStyle = '#2196F3';
+        ctx.fillText('● ψ=0.3 (démocratique)', 10, this.canvas.height - 15);
+        ctx.fillStyle = 'rgba(76, 175, 80, 0.5)';
+        ctx.fillText('▬ Zone de transition', 10, this.canvas.height - 45);
+    }
+
+    /**
      * Dessine les labels des axes
      */
     drawLabels() {
@@ -323,5 +408,14 @@ export class RadarChart {
         this.centerX = width / 2;
         this.centerY = height / 2;
         this.radius = Math.min(width, height) / 2 - 60;
+    }
+
+    /**
+     * Double la taille du radar
+     */
+    doubleSize() {
+        const currentWidth = this.canvas.width;
+        const currentHeight = this.canvas.height;
+        this.resize(currentWidth * 2, currentHeight * 2);
     }
 }
