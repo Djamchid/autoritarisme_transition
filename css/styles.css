@@ -112,7 +112,7 @@ header p {
 
 main {
     display: grid;
-    grid-template-columns: 1fr 1000px;
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
     padding: 20px;
 }
@@ -133,7 +133,9 @@ main {
 
 canvas {
     display: block;
-    width: 100%;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100%;
     background: white;
     border-radius: 5px;
     border: 1px solid #e0e0e0;
@@ -213,8 +215,10 @@ canvas {
 }
 
 .radar-container canvas {
-    width: 900px !important;
-    height: 900px !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: 900px;
+    aspect-ratio: 1 / 1;
 }
 
 .button-group {
