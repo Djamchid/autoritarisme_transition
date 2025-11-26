@@ -9,13 +9,30 @@ import { Parameters, computeAgentDerivatives, computeMacroDerivatives } from './
 
 /**
  * Simule le système jusqu'à t_max et retourne psi_infini
+ * Version stable avec moyennage sur plusieurs réalisations
  * @param {Object} params - Paramètres du modèle
  * @param {number} tMax - Temps de simulation maximal
  * @param {number} dt - Pas de temps
  * @param {number} numAgents - Nombre d'agents
- * @returns {number} - Valeur de psi à t_max (psi_infini)
+ * @param {number} numRealizations - Nombre de réalisations pour moyenner
+ * @returns {number} - Valeur moyenne de psi à t_max (psi_infini)
  */
-export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents = 100) {
+export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents = 100, numRealizations = 5) {
+    let sumPsi = 0;
+
+    // Moyenner sur plusieurs réalisations pour réduire la variance
+    for (let realization = 0; realization < numRealizations; realization++) {
+        sumPsi += singleRealization(params, tMax, dt, numAgents);
+    }
+
+    return sumPsi / numRealizations;
+}
+
+/**
+ * Une seule réalisation de la simulation
+ * @private
+ */
+function singleRealization(params, tMax, dt, numAgents) {
     // Créer une nouvelle simulation temporaire
     const agents = [];
     for (let i = 0; i < numAgents; i++) {
