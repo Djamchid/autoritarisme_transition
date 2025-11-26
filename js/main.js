@@ -5,10 +5,12 @@
 
 import { Simulator } from './simulator.js';
 import { Visualizer } from './visualization.js';
+import { RadarChart } from './radarchart.js';
 
 // État global de l'application
 let simulator;
 let visualizer;
+let radarChart;
 let animationFrameId = null;
 
 /**
@@ -18,11 +20,13 @@ function init() {
     // Récupérer les éléments du DOM
     const agentCanvas = document.getElementById('agentCanvas');
     const timeSeriesCanvas = document.getElementById('timeSeriesCanvas');
+    const radarCanvas = document.getElementById('radarCanvas');
 
     // Créer le simulateur et le visualiseur
     const numAgents = parseInt(document.getElementById('numAgents').value);
     simulator = new Simulator(numAgents);
     visualizer = new Visualizer(agentCanvas, timeSeriesCanvas);
+    radarChart = new RadarChart(radarCanvas);
 
     // Configurer les contrôles
     setupControls();
@@ -100,6 +104,10 @@ function setupParameterSlider(param, greekLetter) {
         const val = parseFloat(value);
         document.getElementById(`${param}Value`).textContent = val.toFixed(2);
         simulator.setParameter(param, val);
+        // Mettre à jour le radar chart
+        if (radarChart) {
+            radarChart.draw(simulator.parameters);
+        }
     });
 }
 
@@ -185,6 +193,9 @@ function render() {
 
     // Dessiner les séries temporelles
     visualizer.drawTimeSeries(simulator.society.history);
+
+    // Dessiner le radar chart des paramètres
+    radarChart.draw(simulator.parameters);
 
     // Mettre à jour les métriques
     const state = simulator.getState();
