@@ -13,6 +13,25 @@
             <p>Modélisation par équations différentielles d'un système multi-agents</p>
         </header>
 
+        <!-- Barre de contrôle fixe -->
+        <div class="fixed-controls">
+            <div class="button-group">
+                <button id="startBtn" class="btn btn-primary">Démarrer</button>
+                <button id="pauseBtn" class="btn btn-secondary" disabled>Pause</button>
+                <button id="resetBtn" class="btn btn-warning">Réinitialiser</button>
+            </div>
+            <div class="fixed-controls-params">
+                <div class="control-item-inline">
+                    <label for="numAgents">Agents: <span id="numAgentsValue">100</span></label>
+                    <input type="range" id="numAgents" min="50" max="500" value="100" step="10">
+                </div>
+                <div class="control-item-inline">
+                    <label for="timeStep">dt: <span id="timeStepValue">0.01</span></label>
+                    <input type="range" id="timeStep" min="0.001" max="0.1" value="0.01" step="0.001">
+                </div>
+            </div>
+        </div>
+
         <main>
             <div class="simulation-area">
                 <div class="canvas-container">
@@ -54,20 +73,10 @@
             </div>
 
             <div class="controls-area">
-                <div class="control-section">
-                    <h3>Contrôles de simulation</h3>
-                    <div class="button-group">
-                        <button id="startBtn" class="btn btn-primary">Démarrer</button>
-                        <button id="pauseBtn" class="btn btn-secondary" disabled>Pause</button>
-                        <button id="resetBtn" class="btn btn-warning">Réinitialiser</button>
-                    </div>
-                    <div class="control-item">
-                        <label for="numAgents">Nombre d'agents: <span id="numAgentsValue">100</span></label>
-                        <input type="range" id="numAgents" min="50" max="500" value="100" step="10">
-                    </div>
-                    <div class="control-item">
-                        <label for="timeStep">Pas de temps (dt): <span id="timeStepValue">0.01</span></label>
-                        <input type="range" id="timeStep" min="0.001" max="0.1" value="0.01" step="0.001">
+                <div class="control-section radar-section">
+                    <h3>Vue d'ensemble des paramètres</h3>
+                    <div class="radar-container">
+                        <canvas id="radarCanvas" width="350" height="350"></canvas>
                     </div>
                 </div>
 
