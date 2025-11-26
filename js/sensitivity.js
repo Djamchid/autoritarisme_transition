@@ -55,7 +55,7 @@ export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents =
 
     const society = new Society(agents);
 
-    // Simulation jusqu'à tMax
+    // Simulation jusqu'à tMax avec arrêt anticipé
     let time = 0;
     const numSteps = Math.floor(tMax / dt);
 
@@ -87,6 +87,13 @@ export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents =
         society.update(macroDerivatives, dt);
 
         time += dt;
+
+        // Conditions d'arrêt anticipé (état stable atteint)
+        const psi = society.getOrderParameter();
+        if (society.institutionalQuality <= 0.2 || psi >= 0.8) {
+            // État stable atteint, pas besoin de continuer
+            break;
+        }
     }
 
     // Retourner psi_infini

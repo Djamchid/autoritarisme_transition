@@ -46,9 +46,6 @@ function init() {
         radarChart.draw(simulator.parameters);
     });
 
-    // Doubler la taille du radar
-    radarChart.doubleSize();
-
     // Configurer les contrôles
     setupControls();
 
