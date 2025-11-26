@@ -6,8 +6,9 @@
 export class RadarChart {
     /**
      * @param {HTMLCanvasElement} canvas - Canvas pour le radar chart
+     * @param {Function} onParameterChange - Callback appelé quand un paramètre change
      */
-    constructor(canvas) {
+    constructor(canvas, onParameterChange = null) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.centerX = canvas.width / 2;
@@ -27,6 +28,106 @@ export class RadarChart {
 
         this.numAxes = this.parameters.length;
         this.angleStep = (2 * Math.PI) / this.numAxes;
+
+        // État d'interaction
+        this.isDragging = false;
+        this.currentParams = null;
+        this.onParameterChange = onParameterChange;
+
+        // Configurer les event listeners
+        this.setupInteraction();
+    }
+
+    /**
+     * Configure l'interaction utilisateur (clic et drag)
+     */
+    setupInteraction() {
+        this.canvas.style.cursor = 'pointer';
+
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        this.canvas.addEventListener('mouseup', () => this.handleMouseUp());
+        this.canvas.addEventListener('mouseleave', () => this.handleMouseUp());
+
+        // Support tactile
+        this.canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this.handleMouseDown(touch);
+        });
+        this.canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            this.handleMouseMove(touch);
+        });
+        this.canvas.addEventListener('touchend', () => this.handleMouseUp());
+    }
+
+    /**
+     * Gère le clic de souris
+     */
+    handleMouseDown(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        this.isDragging = true;
+        this.updateParameterFromPosition(x, y);
+    }
+
+    /**
+     * Gère le mouvement de la souris
+     */
+    handleMouseMove(e) {
+        if (!this.isDragging) return;
+
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        this.updateParameterFromPosition(x, y);
+    }
+
+    /**
+     * Gère le relâchement de la souris
+     */
+    handleMouseUp() {
+        this.isDragging = false;
+    }
+
+    /**
+     * Met à jour un paramètre en fonction de la position de la souris
+     */
+    updateParameterFromPosition(x, y) {
+        if (!this.currentParams) return;
+
+        // Calculer la distance et l'angle depuis le centre
+        const dx = x - this.centerX;
+        const dy = y - this.centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        let angle = Math.atan2(dy, dx);
+
+        // Ajuster l'angle pour correspondre à notre système (commence en haut)
+        angle += Math.PI / 2;
+        if (angle < 0) angle += 2 * Math.PI;
+
+        // Trouver l'axe le plus proche
+        const axisIndex = Math.round(angle / this.angleStep) % this.numAxes;
+        const param = this.parameters[axisIndex];
+
+        // Calculer la nouvelle valeur (normalisée entre 0 et max)
+        const normalizedDistance = Math.min(distance / this.radius, 1);
+        const newValue = normalizedDistance * param.max;
+
+        // Arrondir pour avoir des valeurs propres
+        const step = param.max >= 2 ? 0.1 : 0.05;
+        const roundedValue = Math.round(newValue / step) * step;
+        const clampedValue = Math.max(0, Math.min(param.max, roundedValue));
+
+        // Appeler le callback si la valeur a changé
+        if (this.onParameterChange && this.currentParams[param.key] !== clampedValue) {
+            this.onParameterChange(param.key, clampedValue);
+        }
     }
 
     /**
@@ -34,6 +135,8 @@ export class RadarChart {
      * @param {Object} params - Objet contenant les valeurs des paramètres
      */
     draw(params) {
+        this.currentParams = params;
+
         const ctx = this.ctx;
         const width = this.canvas.width;
         const height = this.canvas.height;
@@ -143,11 +246,11 @@ export class RadarChart {
         ctx.closePath();
 
         // Remplissage semi-transparent
-        ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+        ctx.fillStyle = this.isDragging ? 'rgba(102, 126, 234, 0.5)' : 'rgba(102, 126, 234, 0.3)';
         ctx.fill();
 
         // Bordure
-        ctx.strokeStyle = 'rgba(102, 126, 234, 0.8)';
+        ctx.strokeStyle = this.isDragging ? 'rgba(102, 126, 234, 1)' : 'rgba(102, 126, 234, 0.8)';
         ctx.lineWidth = 2;
         ctx.stroke();
 
@@ -162,8 +265,11 @@ export class RadarChart {
             const x = this.centerX + r * Math.cos(angle);
             const y = this.centerY + r * Math.sin(angle);
 
+            // Points plus gros pendant le drag
+            const pointRadius = this.isDragging ? 6 : 4;
+
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, 2 * Math.PI);
+            ctx.arc(x, y, pointRadius, 0, 2 * Math.PI);
             ctx.fillStyle = param.color;
             ctx.fill();
             ctx.strokeStyle = '#fff';
@@ -198,6 +304,12 @@ export class RadarChart {
             ctx.fillStyle = param.color;
             ctx.fillText(param.label, x, y);
         }
+
+        // Indication d'interactivité
+        ctx.font = 'italic 10px sans-serif';
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('Cliquez et glissez pour ajuster', this.centerX, this.canvas.height - 10);
     }
 
     /**
