@@ -201,6 +201,7 @@ canvas {
 /* Section radar chart */
 .radar-section {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    min-height: 600px;
 }
 
 .radar-container {
@@ -208,11 +209,16 @@ canvas {
     justify-content: center;
     align-items: center;
     padding: 10px;
+    width: 100%;
+    transform: scale(1.5);
+    transform-origin: center center;
+    margin: 80px 0;
 }
 
 .radar-container canvas {
-    max-width: 100%;
-    height: auto !important;
+    width: 700px !important;
+    height: 700px !important;
+    max-width: none;
 }
 
 .button-group {
