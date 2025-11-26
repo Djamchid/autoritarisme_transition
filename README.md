@@ -68,6 +68,59 @@ Où:
 - **Ψ ∈ [0, 0.3]** : Régime fragile, risque de transition
 - **Ψ < 0** : Régime autoritaire établi
 
+## Conditions initiales
+
+### Conditions initiales individuelles
+
+Chaque agent est initialisé avec des valeurs **tirées aléatoirement** selon les distributions suivantes:
+
+| Variable | Symbole | Distribution initiale | Implémentation |
+|----------|---------|----------------------|----------------|
+| Richesse | w_i_0 | U(0, 1) | `Math.random()` |
+| Éducation | e_i_0 | U(0, 1) | `Math.random()` |
+| Sécurité perçue | s_i_0 | U(0, 1) | `Math.random()` |
+| Tolérance économique | τ^w_i_0 | U(-1, 1) | `Math.random() * 2 - 1` |
+| Tolérance physique | τ^p_i_0 | U(-1, 1) | `Math.random() * 2 - 1` |
+| Tolérance culturelle | τ^c_i_0 | U(-1, 1) | `Math.random() * 2 - 1` |
+| Énergie civique | ε_i_0 | U(0, 1) | `Math.random()` |
+| Perméabilité | π_i_0 | U(0, 1) | `Math.random()` |
+| Adhésion démocratique | α_i_0 | U(-1, 1) | `Math.random() * 2 - 1` |
+
+**Note:** U(a, b) désigne une distribution uniforme sur l'intervalle [a, b].
+
+### Conditions initiales macroscopiques
+
+Les variables macroscopiques sont initialisées avec des valeurs fixes représentant un **régime démocratique relativement stable**:
+
+| Variable | Symbole | Valeur initiale | Justification |
+|----------|---------|----------------|---------------|
+| **Qualité institutionnelle** | **Q_0** | **0.7** | Institutions démocratiques solides |
+| Inégalité (Gini) | G_0 | 0.3 | Inégalités modérées |
+| Polarisation | Φ_0 | 0.2 | Société relativement cohésive |
+| Menace perçue | M_0 | 0.2 | Climat de faible anxiété |
+| Diversité culturelle | D | 0.5 | Constante (hétérogénéité moyenne) |
+| Menace externe | M_ext | 0.2 | Contexte géopolitique stable |
+| Précarité | P_0 | 0.2 | Calculée depuis ⟨s⟩ |
+
+**Paramètre d'ordre initial:**
+```
+Ψ_0 = ⟨α_0⟩ · Q_0 ≈ 0 · 0.7 = 0
+```
+
+Les agents étant tirés uniformément dans [-1, 1], l'adhésion moyenne initiale ⟨α_0⟩ ≈ 0, plaçant le système dans une **zone de transition fragile**.
+
+### Personnalisation des conditions initiales
+
+Le code permet de modifier les conditions initiales macroscopiques via `society.reset()`:
+
+```javascript
+society.reset(
+    initQ = 0.7,      // Qualité institutionnelle
+    initGini = 0.3,   // Inégalité
+    extThreat = 0.2   // Menace externe
+);
+```
+
 ## Équations du modèle
 
 ### Équations individuelles
