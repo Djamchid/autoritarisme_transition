@@ -19,13 +19,13 @@ export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents =
     // Créer une nouvelle simulation temporaire
     const agents = [];
     for (let i = 0; i < numAgents; i++) {
-        const x = Math.random() * 0.5;  // Zone réduite de moitié
-        const y = Math.random() * 0.5;
+        const x = Math.random();
+        const y = Math.random();
         agents.push(new Agent(i, x, y));
     }
 
     // Configuration du voisinage
-    const neighborhoodRadius = 0.1;  // Réduit de moitié aussi
+    const neighborhoodRadius = 0.2;
     for (let agent of agents) {
         agent.neighbors = [];
         for (let other of agents) {
