@@ -13,7 +13,7 @@ body {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 2000px;
     margin: 0 auto;
     background: white;
     border-radius: 15px;
@@ -112,7 +112,7 @@ header p {
 
 main {
     display: grid;
-    grid-template-columns: 1fr 800px;
+    grid-template-columns: 1fr 1000px;
     gap: 20px;
     padding: 20px;
 }
@@ -201,20 +201,20 @@ canvas {
 /* Section radar chart */
 .radar-section {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    min-height: 750px;
+    min-height: 950px;
 }
 
 .radar-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px;
+    padding: 20px;
     width: 100%;
 }
 
 .radar-container canvas {
-    width: 700px !important;
-    height: 700px !important;
+    width: 900px !important;
+    height: 900px !important;
 }
 
 .button-group {
