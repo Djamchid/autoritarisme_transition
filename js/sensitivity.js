@@ -119,63 +119,103 @@ function singleRealization(params, tMax, dt, numAgents) {
 
 /**
  * Trouve la valeur du paramètre pour laquelle psi_infini atteint la cible
- * Utilise une recherche par dichotomie
+ * Utilise une recherche par dichotomie adaptée selon l'extremum recherché
  * @param {string} paramName - Nom du paramètre à varier
  * @param {number} targetPsi - Valeur cible de psi_infini
  * @param {Object} baseParams - Paramètres de base
  * @param {number} pMin - Valeur minimale du paramètre
  * @param {number} pMax - Valeur maximale du paramètre
  * @param {number} tolerance - Tolérance pour la convergence
+ * @param {string} extremum - 'min' ou 'max' - type de borne recherchée
  * @returns {number} - Valeur du paramètre trouvée
  */
-export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax, tolerance = 0.01) {
+export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax, tolerance = 0.01, extremum = 'min') {
     const maxIterations = 30;
     let iteration = 0;
 
     // Copier les paramètres de base
     const params = Object.assign(Object.create(Object.getPrototypeOf(baseParams)), baseParams);
 
-    // Vérifier les bornes
+    // Évaluer aux bornes
     params[paramName] = pMin;
     const psiMin = simulateToSteadyState(params, 100, 0.02, 50);
 
     params[paramName] = pMax;
     const psiMax = simulateToSteadyState(params, 100, 0.02, 50);
 
-    // Si la cible n'est pas dans l'intervalle, retourner la borne la plus proche
-    if ((targetPsi < psiMin && targetPsi < psiMax) || (targetPsi > psiMin && targetPsi > psiMax)) {
-        return Math.abs(targetPsi - psiMin) < Math.abs(targetPsi - psiMax) ? pMin : pMax;
+    // Déterminer si ψ(p) est croissante ou décroissante
+    const isIncreasing = psiMax > psiMin;
+
+    // Vérifier si targetPsi est atteignable
+    const minPsiValue = Math.min(psiMin, psiMax);
+    const maxPsiValue = Math.max(psiMin, psiMax);
+
+    if (targetPsi < minPsiValue || targetPsi > maxPsiValue) {
+        // Target hors de portée, retourner la borne appropriée
+        if (extremum === 'min') {
+            return isIncreasing ? pMin : pMax;
+        } else {
+            return isIncreasing ? pMax : pMin;
+        }
     }
 
-    // Dichotomie
+    // Dichotomie avec distinction min/max
     let low = pMin;
     let high = pMax;
+    let bestCandidate = extremum === 'min' ? high : low;
 
     while (iteration < maxIterations && (high - low) > tolerance * 0.01) {
         const mid = (low + high) / 2;
         params[paramName] = mid;
         const psiMid = simulateToSteadyState(params, 100, 0.02, 50);
 
-        const error = psiMid - targetPsi;
+        // Vérifier si on satisfait la condition
+        const satisfiesCondition = (targetPsi === 0)
+            ? (psiMid <= 0 + tolerance)
+            : (psiMid >= targetPsi - tolerance && psiMid <= targetPsi + tolerance);
 
-        if (Math.abs(error) < tolerance) {
-            return mid;
+        if (satisfiesCondition) {
+            // Mettre à jour le meilleur candidat selon l'extremum recherché
+            if (extremum === 'min' && mid < bestCandidate) {
+                bestCandidate = mid;
+            } else if (extremum === 'max' && mid > bestCandidate) {
+                bestCandidate = mid;
+            }
         }
 
-        // Déterminer dans quelle moitié se trouve la solution
-        params[paramName] = low;
-        const psiLow = simulateToSteadyState(params, 100, 0.02, 50);
-
-        if ((psiLow < targetPsi && psiMid > targetPsi) || (psiLow > targetPsi && psiMid < targetPsi)) {
-            high = mid;
+        // Naviguer selon monotonie et cible
+        if (isIncreasing) {
+            if (psiMid < targetPsi) {
+                low = mid;
+            } else {
+                high = mid;
+            }
         } else {
-            low = mid;
+            if (psiMid < targetPsi) {
+                high = mid;
+            } else {
+                low = mid;
+            }
         }
 
         iteration++;
     }
 
-    return (low + high) / 2;
+    // Affiner le résultat final
+    const finalMid = (low + high) / 2;
+    params[paramName] = finalMid;
+    const psiFinal = simulateToSteadyState(params, 100, 0.02, 50);
+
+    // Retourner le meilleur candidat ou le résultat de la dichotomie
+    if (Math.abs(psiFinal - targetPsi) < tolerance) {
+        if (extremum === 'min') {
+            return Math.min(bestCandidate, finalMid);
+        } else {
+            return Math.max(bestCandidate, finalMid);
+        }
+    }
+
+    return bestCandidate !== (extremum === 'min' ? high : low) ? bestCandidate : finalMid;
 }
 
 /**
@@ -187,15 +227,16 @@ export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax
 export function analyzeSensitivity(baseParams, progressCallback = null) {
     const results = {};
 
-    // Liste des paramètres à analyser avec leurs plages
+    // Liste des paramètres à analyser avec leurs plages et classification
+    // virtuous: true si ↑ paramètre → ↑ ψ, false si ↑ paramètre → ↓ ψ
     const parametersToAnalyze = [
-        { key: 'beta1', min: 0, max: 2 },
-        { key: 'beta2', min: 0, max: 2 },
-        { key: 'beta3', min: 0, max: 2 },
-        { key: 'beta4', min: 0, max: 2 },
-        { key: 'mu1', min: 0, max: 1 },
-        { key: 'mu2', min: 0, max: 1 },
-        { key: 'mu3', min: 0, max: 1 },
+        { key: 'beta1', min: 0, max: 2, virtuous: true },   // Éducation (vertueux)
+        { key: 'beta2', min: 0, max: 2, virtuous: false },  // Insécurité (nocif)
+        { key: 'beta3', min: 0, max: 2, virtuous: true },   // Institutions (vertueux)
+        { key: 'beta4', min: 0, max: 2, virtuous: false },  // Peur (nocif)
+        { key: 'mu1', min: 0, max: 1, virtuous: true },     // Engagement (vertueux)
+        { key: 'mu2', min: 0, max: 1, virtuous: false },    // Capture (nocif)
+        { key: 'mu3', min: 0, max: 1, virtuous: false },    // Corruption (nocif)
     ];
 
     const total = parametersToAnalyze.length;
@@ -207,31 +248,28 @@ export function analyzeSensitivity(baseParams, progressCallback = null) {
             progressCallback(param.key, i + 1, total);
         }
 
-        // Trouver p_autocratique (psi = 0)
-        const pAutocratic = findParameterForPsi(
-            param.key,
-            0,
-            baseParams,
-            param.min,
-            param.max,
-            0.02
-        );
+        let pAutocratic, pDemocratic;
 
-        // Trouver p_démocratique (psi = 0.3)
-        const pDemocratic = findParameterForPsi(
-            param.key,
-            0.3,
-            baseParams,
-            param.min,
-            param.max,
-            0.02
-        );
+        if (param.virtuous) {
+            // Paramètre vertueux : ψ croît avec p
+            // p_autocratique = max(p | ψ ≤ 0) → dernière valeur avant de sortir de l'autoritarisme
+            // p_démocratique = min(p | ψ ≥ 0.3) → première valeur d'entrée en démocratie
+            pAutocratic = findParameterForPsi(param.key, 0, baseParams, param.min, param.max, 0.02, 'max');
+            pDemocratic = findParameterForPsi(param.key, 0.3, baseParams, param.min, param.max, 0.02, 'min');
+        } else {
+            // Paramètre nocif : ψ décroît avec p
+            // p_autocratique = min(p | ψ ≤ 0) → première valeur d'entrée en autoritarisme
+            // p_démocratique = max(p | ψ ≥ 0.3) → dernière valeur de démocratie
+            pAutocratic = findParameterForPsi(param.key, 0, baseParams, param.min, param.max, 0.02, 'min');
+            pDemocratic = findParameterForPsi(param.key, 0.3, baseParams, param.min, param.max, 0.02, 'max');
+        }
 
         results[param.key] = {
             autocratic: pAutocratic,
             democratic: pDemocratic,
             min: Math.min(pAutocratic, pDemocratic),
-            max: Math.max(pAutocratic, pDemocratic)
+            max: Math.max(pAutocratic, pDemocratic),
+            virtuous: param.virtuous
         };
     }
 
