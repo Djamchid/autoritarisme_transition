@@ -94,10 +94,10 @@ Zone de transition = [p_démocratique, p_autocratique]
 
 **Arrêt anticipé** :
 La simulation s'arrête avant t_max si :
-- Q ≤ 0.2 (effondrement institutionnel) OU
-- ψ ≥ 0.8 (démocratie très stable)
+- Q ≤ 0.05 (effondrement institutionnel) OU
+- ψ ≥ 0.95 (démocratie très stable)
 
-Cela accélère les calculs de ~50-70%.
+Critères resserrés pour éviter arrêts prématurés et réduire variance.
 
 **Sortie** : ψ_∞ = paramètre d'ordre à l'état final
 
