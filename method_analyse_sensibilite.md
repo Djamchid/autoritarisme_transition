@@ -30,9 +30,56 @@ Pour chaque paramètre p_j :
 2. **Réinitialiser** le système avec les conditions initiales standard
 3. **Varier** p_j et simuler jusqu'à t_max
 4. **Calculer** ψ_∞(p_j) = ⟨α⟩(t_max) · Q(t_max)
-5. **Trouver** par recherche dichotomique :
-   - p_autocratique tel que ψ_∞(p_autocratique) = 0
-   - p_démocratique tel que ψ_∞(p_démocratique) = 0.3
+5. **Classifier** le paramètre comme vertueux ou nocif
+6. **Trouver** par recherche dichotomique les bornes correctes (voir section 1.1)
+
+### 1.1. Classification des paramètres et recherche des bornes ⭐
+
+**Point clé** : La définition des seuils dépend du **type** de paramètre.
+
+#### Paramètres vertueux (↑ p → ↑ ψ)
+
+Pour β₁ (éducation), β₃ (institutions), μ₁ (engagement) :
+
+- **ψ(p) est croissante** : plus le paramètre augmente, plus ψ augmente
+- **Zones** :
+  - p < p_sortie : Zone autoritaire (ψ < 0)
+  - p_sortie < p < p_entrée : Zone de transition
+  - p > p_entrée : Zone démocratique (ψ > 0.3)
+
+**Définition correcte des bornes** :
+```
+p_autocratique = max(p | ψ(p) ≤ 0)
+  → Dernière valeur avant de sortir de l'autoritarisme
+
+p_démocratique = min(p | ψ(p) ≥ 0.3)
+  → Première valeur d'entrée en démocratie
+
+Zone de transition = [p_autocratique, p_démocratique]
+```
+
+#### Paramètres nocifs (↑ p → ↓ ψ)
+
+Pour β₂ (insécurité), β₄ (peur), μ₂ (capture), μ₃ (corruption) :
+
+- **ψ(p) est décroissante** : plus le paramètre augmente, plus ψ diminue
+- **Zones** :
+  - p < p_sortie : Zone démocratique (ψ > 0.3)
+  - p_sortie < p < p_entrée : Zone de transition
+  - p > p_entrée : Zone autoritaire (ψ < 0)
+
+**Définition correcte des bornes** :
+```
+p_autocratique = min(p | ψ(p) ≤ 0)
+  → Première valeur d'entrée en autoritarisme
+
+p_démocratique = max(p | ψ(p) ≥ 0.3)
+  → Dernière valeur de démocratie
+
+Zone de transition = [p_démocratique, p_autocratique]
+```
+
+**Erreur corrigée** : La version initiale cherchait simplement "une" valeur satisfaisant ψ = 0 ou ψ = 0.3, sans distinguer min/max selon le type de paramètre.
 
 ### 2. Simulation jusqu'à l'état stationnaire
 
@@ -53,24 +100,44 @@ Cela accélère les calculs de ~50-70%.
 
 **Sortie** : ψ_∞ = paramètre d'ordre à l'état final
 
-### 3. Recherche par dichotomie
+### 3. Recherche par dichotomie avec extremum
 
-**Fonction** : `findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax, tolerance)`
+**Fonction** : `findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax, tolerance, extremum)`
 
-**Algorithme** :
+**Nouveau paramètre** : `extremum ∈ {'min', 'max'}`
+- 'min' : cherche la plus petite valeur satisfaisant la condition
+- 'max' : cherche la plus grande valeur satisfaisant la condition
+
+**Algorithme amélioré** :
 ```
 1. Évaluer ψ_∞(pMin) et ψ_∞(pMax)
-2. Si la cible n'est pas dans [ψ_∞(pMin), ψ_∞(pMax)], retourner la borne la plus proche
-3. Sinon :
+2. Déterminer la monotonie : isIncreasing = (ψ_∞(pMax) > ψ_∞(pMin))
+3. Si targetPsi hors de portée, retourner la borne appropriée selon extremum
+4. Sinon, dichotomie adaptative :
    a. mid = (pMin + pMax) / 2
    b. Calculer ψ_∞(mid)
-   c. Si |ψ_∞(mid) - targetPsi| < tolerance : retourner mid
-   d. Sinon, déterminer le sous-intervalle contenant la cible
-   e. Recommencer avec le sous-intervalle
-4. Maximum 30 itérations
+   c. Si |ψ_∞(mid) - targetPsi| < tolerance :
+      - Mettre à jour bestCandidate selon extremum
+   d. Naviguer selon monotonie :
+      - Si isIncreasing et ψ_∞(mid) < targetPsi : low = mid
+      - Si isIncreasing et ψ_∞(mid) > targetPsi : high = mid
+      - Inverse si décroissante
+   e. Itérer jusqu'à convergence
+5. Retourner bestCandidate (min ou max selon extremum)
 ```
 
 **Tolérance** : 0.02 (compromis vitesse/précision)
+
+**Exemple** :
+```javascript
+// Pour β₁ (vertueux)
+pAuto = findParameterForPsi('beta1', 0, params, 0, 2, 0.02, 'max')   // max(p | ψ ≤ 0)
+pDemo = findParameterForPsi('beta1', 0.3, params, 0, 2, 0.02, 'min') // min(p | ψ ≥ 0.3)
+
+// Pour β₂ (nocif)
+pAuto = findParameterForPsi('beta2', 0, params, 0, 2, 0.02, 'min')   // min(p | ψ ≤ 0)
+pDemo = findParameterForPsi('beta2', 0.3, params, 0, 2, 0.02, 'max') // max(p | ψ ≥ 0.3)
+```
 
 ## Problème actuel : Variance stochastique
 
