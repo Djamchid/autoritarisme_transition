@@ -18,14 +18,24 @@ import { Parameters, computeAgentDerivatives, computeMacroDerivatives } from './
  * @returns {number} - Valeur moyenne de psi à t_max (psi_infini)
  */
 export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents = 100, numRealizations = 5) {
-    let sumPsi = 0;
+    const psiValues = [];
 
     // Moyenner sur plusieurs réalisations pour réduire la variance
     for (let realization = 0; realization < numRealizations; realization++) {
-        sumPsi += singleRealization(params, tMax, dt, numAgents);
+        const psi = singleRealization(params, tMax, dt, numAgents);
+        psiValues.push(psi);
     }
 
-    return sumPsi / numRealizations;
+    const avgPsi = psiValues.reduce((sum, val) => sum + val, 0) / numRealizations;
+    const variance = psiValues.reduce((sum, val) => sum + Math.pow(val - avgPsi, 2), 0) / numRealizations;
+    const stdDev = Math.sqrt(variance);
+
+    // Log détaillé si variance élevée
+    if (stdDev > 0.05) {
+        console.log(`⚠️ Variance élevée - Réalisations: [${psiValues.map(v => v.toFixed(3)).join(', ')}], Moyenne: ${avgPsi.toFixed(3)}, σ: ${stdDev.toFixed(3)}`);
+    }
+
+    return avgPsi;
 }
 
 /**
@@ -146,17 +156,17 @@ export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax
     // Déterminer si ψ(p) est croissante ou décroissante
     const isIncreasing = psiMax > psiMin;
 
+    console.log(`🔍 ${paramName} → ψ=${targetPsi} (${extremum}): ψ(${pMin})=${psiMin.toFixed(3)}, ψ(${pMax})=${psiMax.toFixed(3)}, ${isIncreasing ? '↑ croissant' : '↓ décroissant'}`);
+
     // Vérifier si targetPsi est atteignable
     const minPsiValue = Math.min(psiMin, psiMax);
     const maxPsiValue = Math.max(psiMin, psiMax);
 
     if (targetPsi < minPsiValue || targetPsi > maxPsiValue) {
         // Target hors de portée, retourner la borne appropriée
-        if (extremum === 'min') {
-            return isIncreasing ? pMin : pMax;
-        } else {
-            return isIncreasing ? pMax : pMin;
-        }
+        const result = extremum === 'min' ? (isIncreasing ? pMin : pMax) : (isIncreasing ? pMax : pMin);
+        console.log(`  ⚠️ Cible ${targetPsi} hors de portée [${minPsiValue.toFixed(3)}, ${maxPsiValue.toFixed(3)}] → retour borne ${result.toFixed(2)}`);
+        return result;
     }
 
     // Dichotomie avec distinction min/max
@@ -207,15 +217,19 @@ export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax
     const psiFinal = simulateToSteadyState(params, 100, 0.02, 50);
 
     // Retourner le meilleur candidat ou le résultat de la dichotomie
+    let result;
     if (Math.abs(psiFinal - targetPsi) < tolerance) {
         if (extremum === 'min') {
-            return Math.min(bestCandidate, finalMid);
+            result = Math.min(bestCandidate, finalMid);
         } else {
-            return Math.max(bestCandidate, finalMid);
+            result = Math.max(bestCandidate, finalMid);
         }
+    } else {
+        result = bestCandidate !== (extremum === 'min' ? high : low) ? bestCandidate : finalMid;
     }
 
-    return bestCandidate !== (extremum === 'min' ? high : low) ? bestCandidate : finalMid;
+    console.log(`  ✓ Trouvé: ${paramName}=${result.toFixed(3)} → ψ=${psiFinal.toFixed(3)} (après ${iteration} itérations)`);
+    return result;
 }
 
 /**
@@ -241,8 +255,12 @@ export function analyzeSensitivity(baseParams, progressCallback = null) {
 
     const total = parametersToAnalyze.length;
 
+    console.log('\n📊 DÉBUT ANALYSE DE SENSIBILITÉ\n');
+
     for (let i = 0; i < parametersToAnalyze.length; i++) {
         const param = parametersToAnalyze[i];
+
+        console.log(`\n━━━ ${param.key} (${param.virtuous ? 'vertueux' : 'nocif'}) [${param.min}, ${param.max}] ━━━`);
 
         if (progressCallback) {
             progressCallback(param.key, i + 1, total);
@@ -264,6 +282,9 @@ export function analyzeSensitivity(baseParams, progressCallback = null) {
             pDemocratic = findParameterForPsi(param.key, 0.3, baseParams, param.min, param.max, 0.02, 'max');
         }
 
+        const zoneWidth = Math.abs(pDemocratic - pAutocratic);
+        console.log(`📍 RÉSULTAT ${param.key}: Zone [${pAutocratic.toFixed(3)}, ${pDemocratic.toFixed(3)}] largeur=${zoneWidth.toFixed(3)}`);
+
         results[param.key] = {
             autocratic: pAutocratic,
             democratic: pDemocratic,
@@ -272,6 +293,15 @@ export function analyzeSensitivity(baseParams, progressCallback = null) {
             virtuous: param.virtuous
         };
     }
+
+    console.log('\n✅ ANALYSE TERMINÉE\n');
+    console.table(Object.entries(results).map(([key, val]) => ({
+        Paramètre: key,
+        Type: val.virtuous ? 'vertueux' : 'nocif',
+        'p_auto': val.autocratic.toFixed(3),
+        'p_demo': val.democratic.toFixed(3),
+        'Largeur zone': (Math.abs(val.democratic - val.autocratic)).toFixed(3)
+    })));
 
     return results;
 }
