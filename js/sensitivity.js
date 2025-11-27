@@ -17,7 +17,7 @@ import { Parameters, computeAgentDerivatives, computeMacroDerivatives } from './
  * @param {number} numRealizations - Nombre de réalisations pour moyenner
  * @returns {number} - Valeur moyenne de psi à t_max (psi_infini)
  */
-export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents = 100, numRealizations = 5) {
+export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents = 100, numRealizations = 10) {
     const psiValues = [];
 
     // Moyenner sur plusieurs réalisations pour réduire la variance
@@ -32,7 +32,7 @@ export function simulateToSteadyState(params, tMax = 100, dt = 0.01, numAgents =
 
     // Log détaillé si variance élevée
     if (stdDev > 0.05) {
-        console.log(`⚠️ Variance élevée - Réalisations: [${psiValues.map(v => v.toFixed(3)).join(', ')}], Moyenne: ${avgPsi.toFixed(3)}, σ: ${stdDev.toFixed(3)}`);
+        console.log(`⚠️ Variance élevée (σ=${stdDev.toFixed(3)}) - Moyenne: ${avgPsi.toFixed(3)} | Réalisations: [${psiValues.map(v => v.toFixed(3)).join(', ')}]`);
     }
 
     return avgPsi;
@@ -148,10 +148,10 @@ export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax
 
     // Évaluer aux bornes
     params[paramName] = pMin;
-    const psiMin = simulateToSteadyState(params, 100, 0.02, 50);
+    const psiMin = simulateToSteadyState(params, 100, 0.02, 75);
 
     params[paramName] = pMax;
-    const psiMax = simulateToSteadyState(params, 100, 0.02, 50);
+    const psiMax = simulateToSteadyState(params, 100, 0.02, 75);
 
     // Déterminer si ψ(p) est croissante ou décroissante
     const isIncreasing = psiMax > psiMin;
@@ -177,7 +177,7 @@ export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax
     while (iteration < maxIterations && (high - low) > tolerance * 0.01) {
         const mid = (low + high) / 2;
         params[paramName] = mid;
-        const psiMid = simulateToSteadyState(params, 100, 0.02, 50);
+        const psiMid = simulateToSteadyState(params, 100, 0.02, 75);
 
         // Vérifier si on satisfait la condition
         const satisfiesCondition = (targetPsi === 0)
@@ -214,7 +214,7 @@ export function findParameterForPsi(paramName, targetPsi, baseParams, pMin, pMax
     // Affiner le résultat final
     const finalMid = (low + high) / 2;
     params[paramName] = finalMid;
-    const psiFinal = simulateToSteadyState(params, 100, 0.02, 50);
+    const psiFinal = simulateToSteadyState(params, 100, 0.02, 75);
 
     // Retourner le meilleur candidat ou le résultat de la dichotomie
     let result;

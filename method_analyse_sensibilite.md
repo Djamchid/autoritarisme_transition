@@ -89,7 +89,8 @@ Zone de transition = [p_démocratique, p_autocratique]
 - `params` : Objet contenant tous les paramètres du modèle
 - `tMax = 100` : Temps de simulation maximal
 - `dt = 0.02` : Pas de temps (plus grand pour la rapidité)
-- `numAgents = 50` : Nombre d'agents (réduit pour la rapidité)
+- `numAgents = 75` : Nombre d'agents (compromis stabilité/vitesse)
+- `numRealizations = 10` : Nombre de réalisations moyennées (réduit variance)
 
 **Arrêt anticipé** :
 La simulation s'arrête avant t_max si :
@@ -195,13 +196,15 @@ function simulateToSteadyStateStable(params, numRealizations = 10) {
 
 **Avantages** :
 - Réduit la variance : σ_moyenne = σ / √N
-- N = 10 → variance divisée par ~3
+- N = 10 → variance divisée par ~3.2
 - N = 20 → variance divisée par ~4.5
 
 **Inconvénients** :
 - Temps de calcul × N
 - Pour 7 paramètres × 30 itérations dichotomie × 10 réalisations = 2100 simulations
-- Durée estimée : 30-60 secondes (acceptable)
+- Durée estimée : 30-90 secondes (acceptable)
+
+**Implémentation actuelle** : N = 10 réalisations, numAgents = 75
 
 ### Solution 2 : Seed pseudo-aléatoire fixe
 
