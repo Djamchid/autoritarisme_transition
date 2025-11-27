@@ -117,7 +117,7 @@ function singleRealization(params, tMax, dt, numAgents) {
 
         // Conditions d'arrêt anticipé (état stable atteint)
         const psi = society.getOrderParameter();
-        if (society.institutionalQuality <= 0.2 || psi >= 0.8) {
+        if (society.institutionalQuality <= 0.05 || psi >= 0.95) {
             // État stable atteint, pas besoin de continuer
             break;
         }
