@@ -62,6 +62,7 @@ function setupControls() {
     document.getElementById('pauseBtn').addEventListener('click', pauseSimulation);
     document.getElementById('resetBtn').addEventListener('click', resetSimulation);
     document.getElementById('sensitivityBtn').addEventListener('click', runSensitivityAnalysis);
+    document.getElementById('exportPsiBtn').addEventListener('click', exportPsiToCSV);
 
     // Contrôles de simulation
     setupSlider('numAgents', (value) => {
@@ -219,6 +220,50 @@ function render() {
     // Mettre à jour les métriques
     const state = simulator.getState();
     visualizer.updateMetrics(state);
+}
+
+/**
+ * Exporte la série temporelle Ψ(t) vers un fichier CSV
+ */
+function exportPsiToCSV() {
+    const history = simulator.society.history;
+
+    // Vérifier qu'il y a des données à exporter
+    if (history.time.length === 0) {
+        alert('Aucune donnée à exporter. Veuillez d\'abord lancer la simulation.');
+        return;
+    }
+
+    // Créer le contenu CSV
+    let csvContent = 'temps,psi\n';  // En-tête
+
+    for (let i = 0; i < history.time.length; i++) {
+        const time = history.time[i].toFixed(6);
+        const psi = history.orderParameter[i].toFixed(6);
+        csvContent += `${time},${psi}\n`;
+    }
+
+    // Créer un blob et déclencher le téléchargement
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+
+    // Générer un nom de fichier avec la date et l'heure
+    const now = new Date();
+    const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const filename = `psi_t_${timestamp}.csv`;
+
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.style.display = 'none';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Libérer la mémoire
+    URL.revokeObjectURL(link.href);
+
+    console.log(`Exporté ${history.time.length} points de données vers ${filename}`);
 }
 
 /**
