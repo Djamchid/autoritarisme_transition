@@ -269,6 +269,11 @@ canvas {
     color: white;
 }
 
+.btn-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
 .control-item {
     margin-bottom: 15px;
 }
